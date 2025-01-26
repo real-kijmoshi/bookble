@@ -1,6 +1,5 @@
 <h1 align="center">📚 Bookble</h1>
 
-<img src="./images/bookble.png" alt="bookble" width="200" style="display: block; margin: 0 auto;">
 
 ## **Description**
 Bookble is the ultimate app for book lovers to manage their personal library, discover new reads, and share their literary experiences. With an intuitive interface and powerful features, it allows you to rate books, organize your collection, and interact with fellow readers.
