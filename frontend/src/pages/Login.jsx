@@ -7,7 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
+} from "../components/ui/Card";
 import fetchBooks from "../utils/fetchBooks";
 
 const API_URL = import.meta.env.VITE_API_BASE;

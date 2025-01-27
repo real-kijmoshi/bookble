@@ -7,7 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-} from "../components/ui/card";
+} from "../components/ui/Card";
 
 const API_URL = import.meta.env.VITE_API_BASE;
 
