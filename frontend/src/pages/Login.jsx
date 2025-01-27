@@ -1,14 +1,5 @@
 import { useState } from "react";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card";
-import fetchBooks from "../utils/fetchBooks";
 
 const API_URL = import.meta.env.VITE_API_BASE;
 
@@ -82,11 +73,6 @@ export default function Login() {
       }
 
       localStorage.setItem("token", data.token);
-
-      console.log(data.user.collection);
-      const books = await fetchBooks(data.user.collection);
-      data.user.collection = books;
-
       localStorage.setItem("profile", JSON.stringify(data.user));
 
       window.location.reload();
@@ -99,65 +85,107 @@ export default function Login() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen dark:bg-gray-900 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="border-b border-gray-200 dark:border-gray-600 pb-4">
-          <CardTitle className="text-2xl font-bold text-center">
+    <div className="flex justify-center items-center min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-lg">
+        <div className="border-b border-gray-200 dark:border-gray-600 p-6">
+          <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white">
             Login
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
+          </h2>
+        </div>
+        <div className="p-6 space-y-4">
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <Input
-                type="text"
-                placeholder="Username or Email"
-                value={loginIdentifier}
-                onChange={handleIdentifierChange}
-                icon={loginIdentifier.includes("@") ? Mail : User}
-                error={formErrors.identifier}
-                className={
-                  formErrors.identifier
-                    ? "border-amber-500 focus:border-amber-500"
-                    : ""
-                }
-              />
+              <label
+                htmlFor="identifier"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Username or Email
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  {loginIdentifier.includes("@") ? (
+                    <Mail className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  )}
+                </div>
+                <input
+                  type="text"
+                  id="identifier"
+                  placeholder="Username or Email"
+                  value={loginIdentifier}
+                  onChange={handleIdentifierChange}
+                  className={`w-full pl-10 pr-3 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    formErrors.identifier
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                />
+              </div>
+              {formErrors.identifier && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.identifier}
+                </p>
+              )}
             </div>
 
-            <div className="relative">
-              <Input
-                type={showPassword ? "text" : "password"}
-                placeholder="Password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  setFormErrors((prev) => ({
-                    ...prev,
-                    password: validatePassword(e.target.value),
-                  }));
-                }}
-                icon={Lock}
-                error={formErrors.password}
-                rightIcon={showPassword ? EyeOff : Eye}
-                onRightIconClick={() => setShowPassword(!showPassword)}
-                className={
-                  formErrors.password
-                    ? "border-amber-500 focus:border-amber-500"
-                    : ""
-                }
-              />
+            <div>
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Lock className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                </div>
+                <input
+                  type={showPassword ? "text" : "password"}
+                  id="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    setFormErrors((prev) => ({
+                      ...prev,
+                      password: validatePassword(e.target.value),
+                    }));
+                  }}
+                  className={`w-full pl-10 pr-10 py-2 border rounded-md bg-white dark:bg-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                    formErrors.password
+                      ? "border-red-500 focus:ring-red-500"
+                      : "border-gray-300 dark:border-gray-600"
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center focus:outline-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  ) : (
+                    <Eye className="h-5 w-5 text-gray-400 dark:text-gray-500" />
+                  )}
+                </button>
+              </div>
+              {formErrors.password && (
+                <p className="mt-1 text-sm text-red-500">
+                  {formErrors.password}
+                </p>
+              )}
             </div>
 
-            <Button
+            <button
               type="submit"
-              className="w-full"
-              variant="primary"
+              className="w-full bg-blue-600 text-white py-2 rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
               disabled={
                 loading || !!formErrors.identifier || !!formErrors.password
               }
             >
               {loading ? "Logging in..." : "Login"}
-            </Button>
+            </button>
 
             <div className="text-center mt-4">
               <button
@@ -167,7 +195,6 @@ export default function Login() {
               >
                 Forgot Password?
               </button>
-
               <p className="text-gray-600 dark:text-gray-400 mt-2">
                 Don&#39;t have an account?{" "}
                 <a
@@ -179,8 +206,8 @@ export default function Login() {
               </p>
             </div>
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

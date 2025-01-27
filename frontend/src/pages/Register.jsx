@@ -1,14 +1,4 @@
 import { useState } from "react";
-import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { Button } from "@/components/ui/Button";
-import { Input } from "@/components/ui/Input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/Card";
-
 
 const API_URL = import.meta.env.VITE_API_BASE;
 
@@ -59,8 +49,8 @@ export default function Register() {
 
   const handleChange = (field) => (e) => {
     const value = e.target.value;
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
     const validators = {
       username: validateUsername,
       email: validateEmail,
@@ -68,20 +58,19 @@ export default function Register() {
       confirmPassword: validateConfirmPassword,
     };
 
-    setFormErrors(prev => ({
+    setFormErrors((prev) => ({
       ...prev,
       [field]: validators[field](value),
-      // Update confirm password error when password changes
-      ...(field === 'password' && {
-        confirmPassword: value !== formData.confirmPassword ? "Passwords do not match" : ""
-      })
+      ...(field === "password" && {
+        confirmPassword:
+          value !== formData.confirmPassword ? "Passwords do not match" : "",
+      }),
     }));
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Validate all fields
     const errors = {
       username: validateUsername(formData.username),
       email: validateEmail(formData.email),
@@ -91,7 +80,7 @@ export default function Register() {
 
     setFormErrors(errors);
 
-    if (Object.values(errors).some(error => error)) return;
+    if (Object.values(errors).some((error) => error)) return;
 
     setLoading(true);
     try {
@@ -113,10 +102,8 @@ export default function Register() {
         throw new Error(data.message || "Registration failed");
       }
 
-      // Optionally auto-login the user
       localStorage.setItem("token", data.token);
       localStorage.setItem("profile", JSON.stringify(data.user));
-      
       window.location.href = "/";
     } catch (error) {
       console.error(error);
@@ -127,91 +114,126 @@ export default function Register() {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen dark:bg-gray-900 p-4">
-      <Card className="w-full max-w-md shadow-2xl">
-        <CardHeader className="border-b border-gray-200 dark:border-gray-600 pb-4">
-          <CardTitle className="text-2xl font-bold text-center">
-            Create Account
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="p-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <Input
-                type="text"
-                placeholder="Username"
-                value={formData.username}
-                onChange={handleChange("username")}
-                icon={User}
-                error={formErrors.username}
-                className={formErrors.username ? "border-amber-500 focus:border-amber-500" : ""}
-              />
-            </div>
+    <div className="flex justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+      <div className="w-full max-w-md bg-white dark:bg-gray-800 rounded-xl shadow-2xl p-6">
+        <h2 className="text-2xl font-bold text-center text-gray-800 dark:text-white mb-6">
+          Create Account
+        </h2>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Username
+            </label>
+            <input
+              type="text"
+              placeholder="Username"
+              value={formData.username}
+              onChange={handleChange("username")}
+              className={`w-full p-2 border rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                formErrors.username && "border-red-500 focus:ring-red-500"
+              }`}
+            />
+            {formErrors.username && (
+              <p className="text-sm text-red-500 mt-1">{formErrors.username}</p>
+            )}
+          </div>
 
-            <div>
-              <Input
-                type="email"
-                placeholder="Email"
-                value={formData.email}
-                onChange={handleChange("email")}
-                icon={Mail}
-                error={formErrors.email}
-                className={formErrors.email ? "border-amber-500 focus:border-amber-500" : ""}
-              />
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              placeholder="Email"
+              value={formData.email}
+              onChange={handleChange("email")}
+              className={`w-full p-2 border rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                formErrors.email && "border-red-500 focus:ring-red-500"
+              }`}
+            />
+            {formErrors.email && (
+              <p className="text-sm text-red-500 mt-1">{formErrors.email}</p>
+            )}
+          </div>
 
-            <div>
-              <Input
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Password
+            </label>
+            <div className="relative">
+              <input
                 type={showPassword ? "text" : "password"}
                 placeholder="Password"
                 value={formData.password}
                 onChange={handleChange("password")}
-                icon={Lock}
-                error={formErrors.password}
-                rightIcon={showPassword ? EyeOff : Eye}
-                onRightIconClick={() => setShowPassword(!showPassword)}
-                className={formErrors.password ? "border-amber-500 focus:border-amber-500" : ""}
+                className={`w-full p-2 border rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  formErrors.password && "border-red-500 focus:ring-red-500"
+                }`}
               />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                {showPassword ? "Hide" : "Show"}
+              </button>
             </div>
+            {formErrors.password && (
+              <p className="text-sm text-red-500 mt-1">{formErrors.password}</p>
+            )}
+          </div>
 
-            <div>
-              <Input
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              Confirm Password
+            </label>
+            <div className="relative">
+              <input
                 type={showConfirmPassword ? "text" : "password"}
                 placeholder="Confirm Password"
                 value={formData.confirmPassword}
                 onChange={handleChange("confirmPassword")}
-                icon={Lock}
-                error={formErrors.confirmPassword}
-                rightIcon={showConfirmPassword ? EyeOff : Eye}
-                onRightIconClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className={formErrors.confirmPassword ? "border-amber-500 focus:border-amber-500" : ""}
+                className={`w-full p-2 border rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  formErrors.confirmPassword && "border-red-500 focus:ring-red-500"
+                }`}
               />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute inset-y-0 right-3 flex items-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+              >
+                {showConfirmPassword ? "Hide" : "Show"}
+              </button>
             </div>
+            {formErrors.confirmPassword && (
+              <p className="text-sm text-red-500 mt-1">
+                {formErrors.confirmPassword}
+              </p>
+            )}
+          </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              variant="primary"
-              disabled={loading || Object.values(formErrors).some(error => error)}
-            >
-              {loading ? "Creating Account..." : "Register"}
-            </Button>
+          <button
+            type="submit"
+            className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={loading || Object.values(formErrors).some((error) => error)}
+          >
+            {loading ? "Creating Account..." : "Register"}
+          </button>
 
-            <div className="text-center mt-4">
-              <span className="text-sm text-gray-600 dark:text-gray-400">
-                Already have an account?{" "}
-                <button
-                  type="button"
-                  className="text-blue-500 hover:underline focus:outline-none"
-                  onClick={() => window.location.href = "/login"}
-                >
-                  Login here
-                </button>
-              </span>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          <div className="text-center mt-4">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              Already have an account? {" "}
+              <button
+                type="button"
+                className="text-blue-500 hover:underline focus:outline-none"
+                onClick={() => (window.location.href = "/login")}
+              >
+                Login here
+              </button>
+            </span>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }
