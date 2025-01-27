@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { User, Mail, Lock, Eye, EyeOff } from "lucide-react";
-import { Button } from "../components/ui/button";
-import { Input } from "../components/ui/input";
+import { Button } from "../components/ui/Button";
+import { Input } from "../components/ui/Input";
 import {
   Card,
   CardContent,
