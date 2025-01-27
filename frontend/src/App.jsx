@@ -10,18 +10,43 @@ import NetworkToast from "./components/NetworkToast";
 import BookDetailsModal from "./components/BookDetailsModal";
 import AddBookFAB from "./components/AddBookFAB";
 import PropTypes from "prop-types";
+import Register from "./pages/Register";
 
 function App() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [showAddBook, setShowAddBook] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showNetworkToast, setShowNetworkToast] = useState(false);
-  const [sortBy, setSortBy] = useState("title");
+  const [sortBy, setSortBy] = useState(localStorage.getItem("sortBy") || "title");
 
-  const { profile, error, addBookToCollection, onRatingChange, onReadToggle } = useProfile();
+  const { profile, error, addBookToCollection, onRatingChange, deleteBookFromCollection, onReadToggle } =
     useProfile();
+  useProfile();
 
   const refresh = () => window.location.reload();
+
+  useEffect(() => {
+    if(["title", "author", "rating-desc", "rating-asc", "read", "unread"].includes(sortBy)) {
+      localStorage.setItem("sortBy", sortBy);
+    } else {
+      setSortBy("title");
+    }
+  }, [sortBy]);
+
+  const onDelete = async (isbn) => {
+    try {
+      await deleteBookFromCollection(isbn);
+      setSelectedBook(null);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const hardRefresh = () => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("profile");
+    window.location.reload();
+  };
 
   useEffect(() => {
     if (error === "NetworkError when attempting to fetch resource.") {
@@ -38,21 +63,20 @@ function App() {
     }
   };
 
-  if (error === "No token provided") return <Login />;
+  const isRegisterPage = window.location.pathname === "/register";
+  if (error === "No token provided") {
+    if (isRegisterPage) return <Register />;
+    return <Login />;
+  }
   if (new URLSearchParams(window.location.search).has("logout")) {
     localStorage.removeItem("token");
     localStorage.removeItem("profile");
     refresh();
   }
 
-  if (error?.startsWith("can't access property")) {
-    // Clear the profile from localStorage and reload the page
-  }
-
   if (error && error !== "NetworkError when attempting to fetch resource.") {
-    return <ErrorScreen error={error} onRetry={refresh} />;
+    return <ErrorScreen error={error} onRetry={refresh} onHardRetry={hardRefresh} />;
   }
-
 
   if (!profile) return <LoadingScreen />;
 
@@ -92,6 +116,7 @@ function App() {
           book={selectedBook}
           onRatingChange={onRatingChange}
           onReadToggle={onReadToggle}
+          onDelete={onDelete}
           onClose={() => setSelectedBook(null)}
         />
       </main>
@@ -120,7 +145,7 @@ const LoadingScreen = () => (
   </motion.div>
 );
 
-const ErrorScreen = ({ error, onRetry }) => (
+const ErrorScreen = ({ error, onRetry, onHardRetry }) => (
   <motion.div
     initial={{ opacity: 0 }}
     animate={{ opacity: 1 }}
@@ -136,6 +161,15 @@ const ErrorScreen = ({ error, onRetry }) => (
         className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors"
       >
         Try Again
+      </motion.button>
+
+      <motion.button
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onHardRetry}
+        className="bg-red-500 text-white px-6 py-3 rounded-lg hover:bg-red-600 transition-colors ml-4"
+      >
+        Log Out and Try Again
       </motion.button>
     </div>
   </motion.div>
@@ -156,7 +190,13 @@ const Header = () => (
   </motion.header>
 );
 
-const BookCollection = ({ books, onBookSelect, onAddBook, sortBy, setSortBy }) => (
+const BookCollection = ({
+  books,
+  onBookSelect,
+  onAddBook,
+  sortBy,
+  setSortBy,
+}) => (
   <section>
     <div className="flex items-center justify-between mb-8">
       <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-200">
@@ -192,25 +232,22 @@ const BookCollection = ({ books, onBookSelect, onAddBook, sortBy, setSortBy }) =
         className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
       >
         <AnimatePresence>
-          
-          {
-            books
-              .sort((a, b) => {
-                if (sortBy === "title") return a.bookData.title.localeCompare(b.bookData.title);
-                if (sortBy === "author") return a.bookData.authors[0].name.localeCompare(b.bookData.authors[0].name);
-                if (sortBy === "rating-desc") return b.rating - a.rating;
-                if (sortBy === "rating-asc") return a.rating - b.rating;
-                if (sortBy === "read") return b.read - a.read;
-                if (sortBy === "unread") return a.read - b.read;
-              })
-              .map((book) => (
-                <BookCard
-                  key={book.isbn}
-                  book={book}
-                  onClick={onBookSelect}
-                />
-              ))
-          }
+          {books
+            .sort((a, b) => {
+              if (sortBy === "title")
+                return a.bookData?.title.localeCompare(b.bookData.title);
+              if (sortBy === "author")
+                return a.bookData?.authors[0].name.localeCompare(
+                  b.bookData?.authors[0].name,
+                );
+              if (sortBy === "rating-desc") return b.rating - a.rating;
+              if (sortBy === "rating-asc") return a.rating - b.rating;
+              if (sortBy === "read") return b.read - a.read;
+              if (sortBy === "unread") return a.read - b.read;
+            })
+            .map((book) => (
+              <BookCard key={book.isbn} book={book} onClick={onBookSelect} />
+            ))}
         </AnimatePresence>
       </motion.div>
     )}
@@ -276,6 +313,7 @@ LoadingScreen.propTypes = {};
 ErrorScreen.propTypes = {
   error: PropTypes.string,
   onRetry: PropTypes.function,
+  onHardRetry: PropTypes.function,
 };
 
 Header.propTypes = {};

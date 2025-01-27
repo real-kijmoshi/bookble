@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const jwt = require("jsonwebtoken");
 const db = require("./database");
+const bycrypt = require("bcrypt");
 
 require("dotenv").config();
 
@@ -55,18 +56,48 @@ app.post("/login", (req, res) => {
 
   const user = db.getUserByEmail(identifier) || db.getUserByName(identifier);
 
-  if(!user) {
+  if (!user) {
     return res.status(401).json({ message: "Invalid credentials" });
   }
+  const collection = db.getCollectionsByUser(user.id);
+
+  user.collection = collection;
 
   if (bycrypt.compareSync(password, user.password)) {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: "30d",
     });
-    res.json({ token, user });
+    
+    res.json({ token, user: { ...user, password: undefined } });
   } else {
     res.status(401).json({ message: "Invalid credentials" });
   }
+});
+
+app.post("/register", (req, res) => {
+  const { username, email, password } = req.body;
+
+  const user = db.getUserByEmail(email) || db.getUserByName(username);
+
+  if (user) {
+    return res.status(400).json({ message: "User already exists" });
+  }
+
+  const hash = bycrypt.hashSync(password, 10);
+
+  db.createUser(username, hash, email);
+
+  const newUser = db.getUserByEmail(email);
+
+  const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
+    expiresIn: "30d",
+  });
+
+  const collection = db.getCollectionsByUser(newUser.id);
+
+  newUser.collection = collection;
+
+  res.json({ message: "User created", token, user: { ...newUser, password: undefined } });
 });
 
 app.get("/profile", protected, (req, res) => {
@@ -76,7 +107,6 @@ app.get("/profile", protected, (req, res) => {
     res.status(401).json({ message: "Unauthorized" });
   }
 });
-
 
 app.post("/collection", protected, (req, res) => {
   const { isbn, provider } = req.body;
@@ -102,15 +132,29 @@ app.put("/collection/:isbn", protected, (req, res) => {
     return res.status(404).json({ message: "Book not found in collection" });
   }
 
-  if(read !== undefined) {
+  if (read !== undefined) {
     collection.read = read;
   }
 
-  if(rating !== undefined) {
+  if (rating !== undefined) {
     collection.rating = rating;
   }
 
   db.updateCollection(req.user.id, isbn, collection.read, collection.rating);
+
+  res.json({ message: "Collection updated" });
+});
+
+app.delete("/collection/:isbn", protected, (req, res) => {
+  const { isbn } = req.params;
+
+  const collection = db.getCollectionByUserAndIsbn(req.user.id, isbn);
+
+  if (!collection) {
+    return res.status(404).json({ message: "Book not found in collection" });
+  }
+
+  db.deleteCollection(req.user.id, isbn);
 
   res.json({ message: "Collection updated" });
 });

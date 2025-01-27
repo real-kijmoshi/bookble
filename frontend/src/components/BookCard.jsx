@@ -47,10 +47,10 @@ const BookCard = ({ book, onClick }) => {
 
       <div className="p-4">
         <h3 className="font-semibold text-gray-800 dark:text-white truncate">
-          {book.bookData.title}
+          {book.bookData?.title}
         </h3>
         <p className="text-sm text-gray-500 dark:text-gray-400 truncate">
-          {book.bookData.authors?.map((a) => a.name).join(", ") ||
+          {book.bookData?.authors?.map((a) => a.name).join(", ") ||
             "Unknown Author"}
         </p>
       </div>

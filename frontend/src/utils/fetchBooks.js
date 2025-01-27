@@ -40,11 +40,24 @@ const fetchBook = async (bookData) => {
     const res = await fetch(
       `https://www.googleapis.com/books/v1/volumes?q=isbn:${bookData.isbn}`,
     );
-    const fetchedData = (await res.json()).items[0].volumeInfo;
+    const responseJson = await res.json();
+
+    if(responseJson.totalItems === 0) {
+      return {
+        ...bookData,
+        bookData: data,
+      };
+    }
+
+    const fetchedData = responseJson.items[0].volumeInfo;
+
 
     data.title = fetchedData.title;
     data.description = fetchedData.description;
-    data.authors = fetchedData.authors.map((author) => ({ name: author, url: "https://www.google.com/search?q=" + author }));
+    data.authors = fetchedData.authors.map((author) => ({
+      name: author,
+      url: "https://www.google.com/search?q=" + author,
+    }));
     data.isbn = fetchedData.industryIdentifiers[0].identifier;
     data.number_of_pages = fetchedData.pageCount;
     data.publish_date = fetchedData.publishedDate;

@@ -83,6 +83,7 @@ export default function Login() {
 
       localStorage.setItem("token", data.token);
 
+      console.log(data.user.collection);
       const books = await fetchBooks(data.user.collection);
       data.user.collection = books;
 
@@ -166,6 +167,16 @@ export default function Login() {
               >
                 Forgot Password?
               </button>
+
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                Don&#39;t have an account?{" "}
+                <a
+                  href="/register"
+                  className="text-blue-500 hover:underline focus:outline-none"
+                >
+                  Register here
+                </a>
+              </p>
             </div>
           </form>
         </CardContent>

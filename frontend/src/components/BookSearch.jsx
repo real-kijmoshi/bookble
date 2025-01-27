@@ -1,12 +1,12 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  X, 
-  Camera as CameraIcon, 
-  Search, 
-  Loader2, 
-  Filter, 
-  ChevronDown 
+import {
+  X,
+  Camera as CameraIcon,
+  Search,
+  Loader2,
+  Filter,
+  ChevronDown,
 } from "lucide-react";
 import PropTypes from "prop-types";
 import BarcodeScanner from "./BarcodeScanner";
@@ -18,7 +18,7 @@ const PROVIDERS = {
     search: async (query, limit) => {
       try {
         const response = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}${limit === "All" ? "" : `&limit=${limit}`}`
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}${limit === "All" ? "" : `&limit=${limit}`}`,
         );
         const data = await response.json();
 
@@ -31,41 +31,47 @@ const PROVIDERS = {
             isbn: book.isbn[0],
             cover: `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`,
             publishDate: book.first_publish_year,
-            source: "openlibrary.org"
+            source: "openlibrary.org",
           }));
       } catch (error) {
         console.error("Open Library search error:", error);
         return [];
       }
-    }
+    },
   },
   googlebooks: {
     name: "Google Books",
     search: async (query, limit) => {
       try {
         const response = await fetch(
-          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}${limit === "All" ? "" : `&maxResults=${limit}`}`
+          `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(query)}${limit === "All" ? "" : `&maxResults=${limit}`}`,
         );
         const data = await response.json();
 
         return (data.items || [])
-          .filter(book => book.volumeInfo.imageLinks && book.volumeInfo.industryIdentifiers)
+          .filter(
+            (book) =>
+              book.volumeInfo.imageLinks && book.volumeInfo.industryIdentifiers,
+          )
           .slice(0, limit)
           .map((book) => ({
             title: book.volumeInfo.title,
             author: book.volumeInfo.authors?.[0] || "Unknown Author",
-            isbn: book.volumeInfo.industryIdentifiers.find(id => id.type === 'ISBN_13')?.identifier || 
-                  book.volumeInfo.industryIdentifiers[0].identifier,
+            isbn:
+              book.volumeInfo.industryIdentifiers.find(
+                (id) => id.type === "ISBN_13",
+              )?.identifier ||
+              book.volumeInfo.industryIdentifiers[0].identifier,
             cover: book.volumeInfo.imageLinks.thumbnail,
             publishDate: book.volumeInfo.publishedDate,
-            source: "googlebooks.com"
+            source: "googlebooks.com",
           }));
       } catch (error) {
         console.error("Google Books search error:", error);
         return [];
       }
-    }
-  }
+    },
+  },
 };
 
 const RESULT_LIMITS = [5, 10, 15, 20, "All"];
@@ -94,7 +100,10 @@ const BookSearch = ({ onAddBook, onClose }) => {
 
       setIsSearching(true);
       try {
-        const results = await PROVIDERS[currentProvider].search(searchQuery, resultLimit);
+        const results = await PROVIDERS[currentProvider].search(
+          searchQuery,
+          resultLimit,
+        );
         setSearchResults(results);
       } catch (error) {
         console.error("Search error:", error);
@@ -126,7 +135,7 @@ const BookSearch = ({ onAddBook, onClose }) => {
 
             {/* Provider Selector */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowProviderDropdown(!showProviderDropdown)}
                 className="flex items-center bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition"
               >
@@ -159,7 +168,7 @@ const BookSearch = ({ onAddBook, onClose }) => {
 
             {/* Result Limit Selector */}
             <div className="relative">
-              <button 
+              <button
                 onClick={() => setShowLimitDropdown(!showLimitDropdown)}
                 className="flex items-center bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-white px-4 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-600 transition"
               >
@@ -175,18 +184,20 @@ const BookSearch = ({ onAddBook, onClose }) => {
                     exit={{ opacity: 0, y: -10 }}
                     className="absolute right-0 mt-2 w-32 bg-white dark:bg-gray-700 rounded-lg shadow-lg z-50"
                   >
-                    {RESULT_LIMITS.filter(limit => limit !== resultLimit).map(limit => (
-                      <button
-                        key={limit}
-                        onClick={() => {
-                          setResultLimit(limit);
-                          setShowLimitDropdown(false);
-                        }}
-                        className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
-                      >
-                        {limit} Results
-                      </button>
-                    ))}
+                    {RESULT_LIMITS.filter((limit) => limit !== resultLimit).map(
+                      (limit) => (
+                        <button
+                          key={limit}
+                          onClick={() => {
+                            setResultLimit(limit);
+                            setShowLimitDropdown(false);
+                          }}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-600"
+                        >
+                          {limit} Results
+                        </button>
+                      ),
+                    )}
                   </motion.div>
                 )}
               </AnimatePresence>
@@ -218,7 +229,7 @@ const BookSearch = ({ onAddBook, onClose }) => {
           )}
 
           {!isSearching && searchResults.length === 0 && (
-            <motion.p 
+            <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               className="text-center text-gray-500 dark:text-gray-400 py-8"
@@ -277,8 +288,8 @@ const BookSearch = ({ onAddBook, onClose }) => {
 
       {/* Click-outside handlers for dropdowns */}
       {(showProviderDropdown || showLimitDropdown) && (
-        <div 
-          className="fixed inset-0 z-40" 
+        <div
+          className="fixed inset-0 z-40"
           onClick={() => {
             setShowProviderDropdown(false);
             setShowLimitDropdown(false);
