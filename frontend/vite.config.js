@@ -5,4 +5,9 @@ import tawilwindcss from "@tailwindcss/vite";
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react(), tawilwindcss()],
+  resolve: {
+    alias: {
+      "@": "/src",
+    },
+  },
 });
