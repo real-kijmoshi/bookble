@@ -1,8 +1,10 @@
+
 <h1 align="center">📚 Bookble</h1>
 
 <p align="center">
   <strong>Your Personal Library, Reimagined</strong>
 </p>
+
 
 <p align="center">
   <img src="https://img.shields.io/github/repo-size/real-kijmoshi/bookble?color=blue&style=flat-square" alt="GitHub repo size">

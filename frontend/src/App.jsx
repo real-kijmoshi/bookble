@@ -119,6 +119,11 @@ function App() {
           onDelete={onDelete}
           onClose={() => setSelectedBook(null)}
         />
+
+        <Profile 
+          profile={profile}
+          isAnyModalOpen={showAddBook || showScanner || selectedBook}
+        />
       </main>
     </div>
   );
@@ -305,6 +310,76 @@ const AddBookModal = ({ visible, onClose, onAddBook }) => (
   </AnimatePresence>
 );
 
+const Profile = ({ profile, isAnyModalOpen }) => {
+  const [showContextMenu, setShowContextMenu] = useState(false);
+
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      if (showContextMenu && !e.target.closest(".fixed.top-4.right-4")) {
+        setShowContextMenu(false);
+      }
+    };
+
+    document.addEventListener("click", handleContextMenu);
+
+    return () => document.removeEventListener("click", handleContextMenu);
+  }, [showContextMenu]);
+
+  if(isAnyModalOpen) return null;
+
+  return (
+    <div className="fixed top-4 right-4 z-50">
+      {
+        profile && (
+          <motion.div
+            initial={{ x: 20, opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex items-center gap-4 cursor-pointer"
+            onClick={() => setShowContextMenu(!showContextMenu)}
+          >
+            <img
+              src={profile.avatar || `https://api.dicebear.com/9.x/pixel-art/svg?r=50&seed=${profile.email}`}
+              alt={profile.name}
+              className="w-12 h-12 rounded-full"
+            />
+            <div
+              className="flex flex-col items-start"
+            >
+              <p className="font-semibold text-gray-800 dark:text-white">
+                {profile.name}
+              </p>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {profile.email}
+              </p>
+            </div>
+          </motion.div>
+        )
+      }
+
+      {showContextMenu && (
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -20, opacity: 0 }}
+          className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg mt-4"
+        >
+
+          <button
+            onClick={() => {
+              localStorage.removeItem("token");
+              localStorage.removeItem("profile");
+              window.location.reload();
+            }}
+            className="block w-full text-left py-2 px-4 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg text-red-500"
+          >
+            Log Out
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+};
+
 // PropTypes
 App.propTypes = {};
 
@@ -340,6 +415,11 @@ AddBookModal.propTypes = {
   visible: PropTypes.bool,
   onClose: PropTypes.function,
   onAddBook: PropTypes.function,
+};
+
+Profile.propTypes = {
+  profile: PropTypes.object,
+  isAnyModalOpen: PropTypes.bool,
 };
 
 export default App;

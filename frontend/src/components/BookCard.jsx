@@ -15,7 +15,7 @@ const BookCard = ({ book, onClick }) => {
       className="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden cursor-pointer group"
     >
       <div className="relative aspect-[2/3]">
-        {book.bookData.cover?.medium ? (
+        {book.bookData?.cover?.medium ? (
           <img
             src={book.bookData.cover.medium}
             alt={book.bookData.title}
