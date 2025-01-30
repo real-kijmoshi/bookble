@@ -140,7 +140,7 @@ if (process.argv.includes("--init")) {
 
   const salt = bcrypt.genSaltSync(10);
   const hash = bcrypt.hashSync("test", salt);
-  createUser("test", hash, salt, "a@a.a");
+  createUser("test", hash, "a@a.a");
 
   createCollection(1, "openlibrary.org", "9780547928241", true, 5); // The Hobbit
   createCollection(1, "openlibrary.org", "9780547928203", true, 4); // The Fellowship of the Ring

@@ -15,7 +15,7 @@ const AddBookFAB = ({ onAddBook }) => {
   );
 };
 AddBookFAB.propTypes = {
-  onAddBook: PropTypes.function,
+  onAddBook: PropTypes.func,
 };
 
 export default AddBookFAB;

@@ -4,7 +4,6 @@ import { Book, Loader2 } from "lucide-react";
 import useProfile from "./hooks/useProfile";
 import Login from "./pages/Login";
 import BookSearch from "./components/BookSearch";
-import BarcodeScanner from "./components/BarcodeScanner";
 import BookCard from "./components/BookCard";
 import NetworkToast from "./components/NetworkToast";
 import BookDetailsModal from "./components/BookDetailsModal";
@@ -15,7 +14,6 @@ import Register from "./pages/Register";
 function App() {
   const [selectedBook, setSelectedBook] = useState(null);
   const [showAddBook, setShowAddBook] = useState(false);
-  const [showScanner, setShowScanner] = useState(false);
   const [showNetworkToast, setShowNetworkToast] = useState(false);
   const [sortBy, setSortBy] = useState(
     localStorage.getItem("sortBy") || "title",
@@ -81,7 +79,7 @@ function App() {
   };
 
   const isRegisterPage = window.location.pathname === "/register";
-  if (error === "No token available") {
+  if (error === "No token available" || !localStorage.getItem("token") || error === "Not signed in") {
     if (isRegisterPage) return <Register />;
     return <Login />;
   }
@@ -119,12 +117,6 @@ function App() {
 
         <AddBookFAB onAddBook={() => setShowAddBook(true)} />
 
-        <ScannerModal
-          visible={showScanner}
-          onClose={() => setShowScanner(false)}
-          onAddBook={handleAddBook}
-        />
-
         <AddBookModal
           visible={showAddBook}
           onClose={() => setShowAddBook(false)}
@@ -141,7 +133,7 @@ function App() {
 
         <Profile
           profile={profile}
-          isAnyModalOpen={showAddBook || showScanner || selectedBook}
+          isAnyModalOpen={showAddBook || selectedBook}
         />
         
       </main>
@@ -281,7 +273,7 @@ const BookCollection = ({
             .map((book) => (
               <BookCard
                 key={book.isbn ?? Math.random()}
-                book={book}
+                book={{ ...book, read: book.read ? true : false /* sqlite is dumb and stores booleans as 0/1 */ }}
                 onClick={onBookSelect}
               />
             ))}
@@ -312,20 +304,6 @@ const EmptyCollection = ({ onAddBook }) => (
   </motion.div>
 );
 
-const ScannerModal = ({ visible, onClose, onAddBook }) => (
-  <AnimatePresence>
-    {visible && (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4"
-      >
-        <BarcodeScanner onClose={onClose} handleAddBook={onAddBook} />
-      </motion.div>
-    )}
-  </AnimatePresence>
-);
 
 const AddBookModal = ({ visible, onClose, onAddBook }) => (
   <AnimatePresence>
@@ -417,34 +395,28 @@ LoadingScreen.propTypes = {};
 
 ErrorScreen.propTypes = {
   error: PropTypes.string,
-  onRetry: PropTypes.function,
-  onHardRetry: PropTypes.function,
+  onRetry: PropTypes.func,
+  onHardRetry: PropTypes.func,
 };
 
 Header.propTypes = {};
 
 BookCollection.propTypes = {
   books: PropTypes.array,
-  onBookSelect: PropTypes.function,
-  onAddBook: PropTypes.function,
+  onBookSelect: PropTypes.func,
+  onAddBook: PropTypes.func,
   sortBy: PropTypes.string,
-  setSortBy: PropTypes.function,
+  setSortBy: PropTypes.func,
 };
 
 EmptyCollection.propTypes = {
-  onAddBook: PropTypes.function,
-};
-
-ScannerModal.propTypes = {
-  visible: PropTypes.bool,
-  onClose: PropTypes.function,
-  onAddBook: PropTypes.function,
+  onAddBook: PropTypes.func,
 };
 
 AddBookModal.propTypes = {
   visible: PropTypes.bool,
-  onClose: PropTypes.function,
-  onAddBook: PropTypes.function,
+  onClose: PropTypes.func,
+  onAddBook: PropTypes.func,
 };
 
 Profile.propTypes = {

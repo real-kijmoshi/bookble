@@ -154,31 +154,30 @@ const BookDetailsModal = ({
 };
 
 BookDetailsModal.propTypes = {
-  book: {
+  book: PropTypes.shape({
     isbn: PropTypes.string,
-    data: {
-      read: PropTypes.bool,
-      rating: PropTypes.number,
-    },
-    bookData: {
+    rating: PropTypes.number,
+    read: PropTypes.bool,
+    bookData: PropTypes.shape({
       title: PropTypes.string,
-      authors: [
-        {
-          name: PropTypes.string,
-          url: PropTypes.string,
-        },
-      ],
-      cover: {
+      authors: PropTypes.arrayOf(PropTypes.shape({
+        name: PropTypes.string,
+        url: PropTypes.string,
+      })),
+      cover: PropTypes.shape({
         medium: PropTypes.string,
         large: PropTypes.string,
-      },
-    },
+      }),
+      description: PropTypes.string,
+      number_of_pages: PropTypes.number,
+      publish_date: PropTypes.string,
+    }),
     provider: PropTypes.string,
-  },
-  onClose: PropTypes.func,
-  onRatingChange: PropTypes.func,
-  onReadToggle: PropTypes.func,
-  onDelete: PropTypes.func,
+  }),
+  onClose: PropTypes.func.isRequired,
+  onRatingChange: PropTypes.func.isRequired,
+  onReadToggle: PropTypes.func.isRequired,
+  onDelete: PropTypes.func.isRequired,
 };
 
 export default BookDetailsModal;

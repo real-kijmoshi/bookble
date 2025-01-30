@@ -17,9 +17,9 @@ const BookCard = ({ book, onClick }) => {
       <div className="relative aspect-[2/3]">
         {book.bookData?.cover?.medium ? (
           <img
-            src={book.bookData.cover.medium}
-            alt={book.bookData.title}
-            className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+            src={book.bookData?.cover.medium}
+            alt={book.bookData?.title}
+            className="w-full h-full object-cover hover:scale-105 transform transition-transform duration-300"
           />
         ) : (
           <div className="w-full h-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center">
@@ -78,7 +78,7 @@ BookCard.propTypes = {
     }),
     provider: PropTypes.string,
   }),
-  onClick: PropTypes.function,
+  onClick: PropTypes.func,
 };
 
 export default BookCard;

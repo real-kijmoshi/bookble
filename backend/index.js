@@ -106,6 +106,7 @@ app.post("/register", (req, res) => {
 
 app.get("/profile", protected, (req, res) => {
   if (req.isAuthenticated) {
+    console.log("user: ", req.user);
     res.json({ user: req.user });
   } else {
     res.status(401).json({ message: "Unauthorized" });

@@ -24,7 +24,7 @@ const NetworkToast = ({ visible, onClose }) => {
 
 NetworkToast.propTypes = {
   visible: PropTypes.bool,
-  onClose: PropTypes.function,
+  onClose: PropTypes.func,
 };
 
 export default NetworkToast;
