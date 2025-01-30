@@ -143,6 +143,7 @@ function App() {
           profile={profile}
           isAnyModalOpen={showAddBook || showScanner || selectedBook}
         />
+        
       </main>
     </div>
   );
