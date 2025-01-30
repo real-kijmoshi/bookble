@@ -81,7 +81,7 @@ function App() {
   };
 
   const isRegisterPage = window.location.pathname === "/register";
-  if (error === "No token provided") {
+  if (error === "No token available") {
     if (isRegisterPage) return <Register />;
     return <Login />;
   }
