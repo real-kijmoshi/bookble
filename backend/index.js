@@ -131,6 +131,12 @@ app.put("/collection/:isbn", protected, (req, res) => {
   if (!collection) {
     return res.status(404).json({ message: "Book not found in collection" });
   }
+  
+    console.log("updating collection")
+    console.log("user id: ", req.user.id)
+    console.log("isbn: ", isbn)
+    console.log("read: ", collection.read, "new read: ", read)
+    console.log("rating: ", collection.rating, "new rating: ", rating)
 
   if (read !== undefined) {
     collection.read = read;
@@ -157,6 +163,62 @@ app.delete("/collection/:isbn", protected, (req, res) => {
   db.deleteCollection(req.user.id, isbn);
 
   res.json({ message: "Collection updated" });
+});
+
+app.get("/search", (req, res) => {
+  const { query, limit = 20, offset = 0, sort = "title", order = "asc" } = req.query;
+
+  if (!query || query.trim().length < 2) {
+    return res.status(400).json({
+      error: "Search query must be at least 2 characters long",
+    });
+  }
+
+  const allowedSortFields = ["title", "author", "published_date", "rating"];
+  const sanitizedSort = allowedSortFields.includes(sort) ? sort : "title";
+  const sanitizedOrder = order.toLowerCase() === "desc" ? "DESC" : "ASC";
+
+  const searchQuery = `
+    SELECT * FROM books 
+    WHERE title LIKE ? 
+    OR author LIKE ? 
+    OR description LIKE ?
+    OR isbn LIKE ?
+    ORDER BY ${sanitizedSort} ${sanitizedOrder}
+    LIMIT ? OFFSET ?
+  `;
+
+  const countQuery = `
+    SELECT COUNT(*) as total FROM books 
+    WHERE title LIKE ? 
+    OR author LIKE ? 
+    OR description LIKE ?
+    OR isbn LIKE ?
+  `;
+
+  const searchTerm = `%${query}%`;
+
+  const books = db.prepare(searchQuery).all(
+    searchTerm,
+    searchTerm,
+    searchTerm,
+    searchTerm,
+    limit,
+    offset,
+  );
+
+  const { total } = db.prepare(countQuery).get(
+    searchTerm,
+    searchTerm,
+    searchTerm,
+    searchTerm,
+  );
+
+  const hasMore = offset + books.length < total;
+  const totalPages = Math.ceil(total / limit);
+  const currentPage = Math.floor(offset / limit) + 1;
+
+  res.json({ books, total, hasMore, totalPages, currentPage });
 });
 
 app.listen(PORT, () => {

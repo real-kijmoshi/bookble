@@ -11,6 +11,8 @@ import {
 import PropTypes from "prop-types";
 import BarcodeScanner from "./BarcodeScanner";
 
+const API_URL = import.meta.env.VITE_API_BASE;
+
 // Book search providers
 const PROVIDERS = {
   openlibrary: {
@@ -71,6 +73,29 @@ const PROVIDERS = {
         return [];
       }
     },
+  },
+  bookble: {
+    name: "bookble",
+    search: async (query, limit) => {
+      try {
+        const response = await fetch(
+          `${API_URL}/search?query=${encodeURIComponent(query)}&limit=${limit}`,
+        );
+        const data = await response.json();
+
+        return data.map((book) => ({
+          title: book.title,
+          author: book.author,
+          isbn: book.isbn,
+          cover: book.cover,
+          publishDate: book.publish_date,
+          source: "bookble",
+        }));
+      } catch (error) {
+        console.error("bookble search error:", error);
+        return [];
+      }
+    }
   },
 };
 

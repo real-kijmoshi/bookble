@@ -1,86 +1,100 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import fetchBooks from "../utils/fetchBooks";
 
 const API_URL = import.meta.env.VITE_API_BASE;
 
+const STORAGE_KEY = "profile";
 
 export default function useProfile() {
-  // Safely parse initial state with default empty values
-  const offlineProfileStorage = localStorage.getItem("profile");
-  const initialProfile = offlineProfileStorage && offlineProfileStorage !== "undefined" 
-    ? JSON.parse(offlineProfileStorage)
-    : { collection: [] };
+  // Helper function to safely get profile from localStorage
+  const getStoredProfile = () => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    try {
+      return stored && stored !== "undefined" ? JSON.parse(stored) : { collection: [] };
+    } catch (e) {
+      console.error("Error parsing stored profile:", e);
+      return { collection: [] };
+    }
+  };
 
-  const [profile, setProfile] = useState(initialProfile);
+  const [profile, setProfile] = useState(getStoredProfile);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch initial profile
-  useEffect(() => {
+  // Helper to update profile state and localStorage
+  const updateProfile = useCallback((newProfile) => {
+    setProfile(newProfile);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(newProfile));
+  }, []);
+
+  // Helper for API calls
+  const makeAuthenticatedRequest = useCallback(async (url, options = {}) => {
     const token = localStorage.getItem("token");
-    if (!token) {
-      setError("No token provided");
-      return;
+    if (!token) throw new Error("No token available");
+
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        ...options.headers,
+        Authorization: token,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
 
-    setIsLoading(true);
-    fetch(`${API_URL}/profile`, {
-      headers: {
-        Authorization: token,
-      },
-    })
-      .then((res) => {
-        if (!res.ok) {
-          throw new Error(`HTTP error! status: ${res.status}`);
-        }
-        return res.json();
-      })
-      .then(async (data) => {
+    return response.json();
+  }, []);
+
+  // Fetch initial profile
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        setIsLoading(true);
+        const data = await makeAuthenticatedRequest(`${API_URL}/profile`);
+        
         if (data.message) {
           throw new Error(data.message);
         }
+
         const books = await fetchBooks(data.user.collection);
         const updatedUser = {
           ...data.user,
-          collection: books
+          collection: books,
         };
-        setProfile(updatedUser);
-        localStorage.setItem("profile", JSON.stringify(updatedUser));
-      })
-      .catch((err) => {
+        
+        updateProfile(updatedUser);
+      } catch (err) {
         setError(err.message);
         console.error("Profile fetch error:", err);
-      })
-      .finally(() => {
+      } finally {
         setIsLoading(false);
-      });
-  }, []);
+      }
+    };
 
-  const addBookToCollection = async (book, provider) => {
+    fetchProfile();
+  }, [makeAuthenticatedRequest, updateProfile]);
+
+  const addBookToCollection = useCallback(async (book, provider) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token available");
-
-      const response = await fetch(`${API_URL}/collection`, {
+      const data = await makeAuthenticatedRequest(`${API_URL}/collection`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
         body: JSON.stringify({ isbn: book, provider }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
       if (data.error) throw new Error(data.error);
+      
+      // Instead of page reload, fetch updated book data
+      const updatedBook = await fetchBooks([book]);
+      updateProfile(prev => ({
+        ...prev,
+        collection: [...prev.collection, ...updatedBook],
+      }));
 
-      // refresh page to get updated collection
-      window.location.reload();
-
+      return data;
     } catch (err) {
       setError(err.message);
       console.error("Add book error:", err);
@@ -88,30 +102,16 @@ export default function useProfile() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [makeAuthenticatedRequest, updateProfile]);
 
-  const deleteBookFromCollection = async (book) => {
+  const deleteBookFromCollection = useCallback(async (book) => {
     setIsLoading(true);
-    console.log(book);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token available");
-
-      const response = await fetch(`${API_URL}/collection/${book}`, {
+      const data = await makeAuthenticatedRequest(`${API_URL}/collection/${book}`, {
         method: "DELETE",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      setProfile(prev => ({
+      updateProfile(prev => ({
         ...prev,
         collection: prev.collection.filter(b => b.isbn !== book),
       }));
@@ -124,30 +124,17 @@ export default function useProfile() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [makeAuthenticatedRequest, updateProfile]);
 
-  const onRatingChange = async (book, rating) => {
+  const onRatingChange = useCallback(async (book, rating) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token available");
-
-      const response = await fetch(`${API_URL}/collection/${book}`, {
+      const data = await makeAuthenticatedRequest(`${API_URL}/collection/${book}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
         body: JSON.stringify({ rating }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      setProfile(prev => ({
+      updateProfile(prev => ({
         ...prev,
         collection: prev.collection.map(b =>
           b.isbn === book ? { ...b, rating } : b
@@ -162,33 +149,20 @@ export default function useProfile() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [makeAuthenticatedRequest, updateProfile]);
 
-  const onReadToggle = async (book) => {
+  const onReadToggle = useCallback(async (book) => {
     setIsLoading(true);
     try {
-      const token = localStorage.getItem("token");
-      if (!token) throw new Error("No token available");
-
       const currentBook = profile.collection.find(b => b.isbn === book);
       if (!currentBook) throw new Error("Book not found in collection");
 
-      const response = await fetch(`${API_URL}/collection/${book}`, {
+      const data = await makeAuthenticatedRequest(`${API_URL}/collection/${book}`, {
         method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: token,
-        },
         body: JSON.stringify({ read: !currentBook.read }),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      setProfile(prev => ({
+      updateProfile(prev => ({
         ...prev,
         collection: prev.collection.map(b =>
           b.isbn === book ? { ...b, read: !b.read } : b
@@ -203,7 +177,7 @@ export default function useProfile() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [makeAuthenticatedRequest, updateProfile, profile.collection]);
 
   return {
     profile,

@@ -21,6 +21,29 @@ const createTables = () => {
       FOREIGN KEY (user_id) REFERENCES users(id)
     );
   `);
+
+  db.exec(`
+      CREATE TABLE IF NOT EXISTS books (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        isbn TEXT NOT NULL,
+        title TEXT NOT NULL,
+        author TEXT NOT NULL,
+        cover TEXT NOT NULL,
+        description TEXT NOT NULL
+      );
+  `)
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS reviews (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER NOT NULL,
+      book_id INTEGER NOT NULL,
+      rating INTEGER NOT NULL,
+      review TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id),
+      FOREIGN KEY (book_id) REFERENCES books(id)
+    );
+  `);
 };
 
 const getUser = (id) => {
@@ -99,6 +122,19 @@ const createCollection = (user_id, provider, isbn, read, rating) => {
     .run(user_id, provider, isbn, read ? 1 : 0, rating);
 };
 
+const getBooks = () => {
+  return db.prepare("SELECT * FROM books").all();
+}
+
+const getBook = (id) => {
+  return db.prepare("SELECT * FROM books WHERE id = ?").get(id);
+}
+
+const getBooksByIsbn = (isbn) => {
+  return db.prepare("SELECT * FROM books WHERE isbn = ?").all(isbn);
+}
+
+
 if (process.argv.includes("--init")) {
   createTables();
   const bcrypt = require("bcrypt");
@@ -130,4 +166,8 @@ module.exports = {
   deleteCollection,
   getCollectionByUserAndIsbn,
   createCollection,
+
+  getBooks,
+  getBook,
+  getBooksByIsbn
 };
