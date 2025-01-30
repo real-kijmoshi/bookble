@@ -17,16 +17,33 @@ function App() {
   const [showAddBook, setShowAddBook] = useState(false);
   const [showScanner, setShowScanner] = useState(false);
   const [showNetworkToast, setShowNetworkToast] = useState(false);
-  const [sortBy, setSortBy] = useState(localStorage.getItem("sortBy") || "title");
+  const [sortBy, setSortBy] = useState(
+    localStorage.getItem("sortBy") || "title",
+  );
 
-  const { profile, error, addBookToCollection, onRatingChange, deleteBookFromCollection, onReadToggle } =
-    useProfile();
+  const {
+    profile,
+    error,
+    addBookToCollection,
+    onRatingChange,
+    deleteBookFromCollection,
+    onReadToggle,
+  } = useProfile();
   useProfile();
 
   const refresh = () => window.location.reload();
 
   useEffect(() => {
-    if(["title", "author", "rating-desc", "rating-asc", "read", "unread"].includes(sortBy)) {
+    if (
+      [
+        "title",
+        "author",
+        "rating-desc",
+        "rating-asc",
+        "read",
+        "unread",
+      ].includes(sortBy)
+    ) {
       localStorage.setItem("sortBy", sortBy);
     } else {
       setSortBy("title");
@@ -75,7 +92,9 @@ function App() {
   }
 
   if (error && error !== "NetworkError when attempting to fetch resource.") {
-    return <ErrorScreen error={error} onRetry={refresh} onHardRetry={hardRefresh} />;
+    return (
+      <ErrorScreen error={error} onRetry={refresh} onHardRetry={hardRefresh} />
+    );
   }
 
   if (!profile) return <LoadingScreen />;
@@ -120,7 +139,7 @@ function App() {
           onClose={() => setSelectedBook(null)}
         />
 
-        <Profile 
+        <Profile
           profile={profile}
           isAnyModalOpen={showAddBook || showScanner || selectedBook}
         />
@@ -325,36 +344,35 @@ const Profile = ({ profile, isAnyModalOpen }) => {
     return () => document.removeEventListener("click", handleContextMenu);
   }, [showContextMenu]);
 
-  if(isAnyModalOpen) return null;
+  if (isAnyModalOpen) return null;
 
   return (
     <div className="fixed top-4 right-4 z-50">
-      {
-        profile && (
-          <motion.div
-            initial={{ x: 20, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex items-center gap-4 cursor-pointer"
-            onClick={() => setShowContextMenu(!showContextMenu)}
-          >
-            <img
-              src={profile.avatar || `https://api.dicebear.com/9.x/pixel-art/svg?r=50&seed=${profile.email}`}
-              alt={profile.name}
-              className="w-12 h-12 rounded-full"
-            />
-            <div
-              className="flex flex-col items-start"
-            >
-              <p className="font-semibold text-gray-800 dark:text-white">
-                {profile.name}
-              </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                {profile.email}
-              </p>
-            </div>
-          </motion.div>
-        )
-      }
+      {profile && (
+        <motion.div
+          initial={{ x: 20, opacity: 0 }}
+          animate={{ x: 0, opacity: 1 }}
+          className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg flex items-center gap-4 cursor-pointer"
+          onClick={() => setShowContextMenu(!showContextMenu)}
+        >
+          <img
+            src={
+              profile.avatar ||
+              `https://api.dicebear.com/9.x/pixel-art/svg?r=50&seed=${profile.email}`
+            }
+            alt={profile.name}
+            className="w-12 h-12 rounded-full"
+          />
+          <div className="flex flex-col items-start">
+            <p className="font-semibold text-gray-800 dark:text-white">
+              {profile.name}
+            </p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {profile.email}
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {showContextMenu && (
         <motion.div
@@ -363,7 +381,6 @@ const Profile = ({ profile, isAnyModalOpen }) => {
           exit={{ y: -20, opacity: 0 }}
           className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow-lg mt-4"
         >
-
           <button
             onClick={() => {
               localStorage.removeItem("token");

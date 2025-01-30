@@ -42,7 +42,7 @@ const fetchBook = async (bookData) => {
     );
     const responseJson = await res.json();
 
-    if(responseJson.totalItems === 0) {
+    if (responseJson.totalItems === 0) {
       return {
         ...bookData,
         bookData: data,
@@ -50,7 +50,6 @@ const fetchBook = async (bookData) => {
     }
 
     const fetchedData = responseJson.items[0].volumeInfo;
-
 
     data.title = fetchedData.title;
     data.description = fetchedData.description;

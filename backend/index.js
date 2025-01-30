@@ -67,7 +67,7 @@ app.post("/login", (req, res) => {
     const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
       expiresIn: "30d",
     });
-    
+
     res.json({ token, user: { ...user, password: undefined } });
   } else {
     res.status(401).json({ message: "Invalid credentials" });
@@ -97,7 +97,11 @@ app.post("/register", (req, res) => {
 
   newUser.collection = collection;
 
-  res.json({ message: "User created", token, user: { ...newUser, password: undefined } });
+  res.json({
+    message: "User created",
+    token,
+    user: { ...newUser, password: undefined },
+  });
 });
 
 app.get("/profile", protected, (req, res) => {
@@ -131,12 +135,12 @@ app.put("/collection/:isbn", protected, (req, res) => {
   if (!collection) {
     return res.status(404).json({ message: "Book not found in collection" });
   }
-  
-    console.log("updating collection")
-    console.log("user id: ", req.user.id)
-    console.log("isbn: ", isbn)
-    console.log("read: ", collection.read, "new read: ", read)
-    console.log("rating: ", collection.rating, "new rating: ", rating)
+
+  console.log("updating collection");
+  console.log("user id: ", req.user.id);
+  console.log("isbn: ", isbn);
+  console.log("read: ", collection.read, "new read: ", read);
+  console.log("rating: ", collection.rating, "new rating: ", rating);
 
   if (read !== undefined) {
     collection.read = read;
@@ -166,7 +170,13 @@ app.delete("/collection/:isbn", protected, (req, res) => {
 });
 
 app.get("/search", (req, res) => {
-  const { query, limit = 20, offset = 0, sort = "title", order = "asc" } = req.query;
+  const {
+    query,
+    limit = 20,
+    offset = 0,
+    sort = "title",
+    order = "asc",
+  } = req.query;
 
   if (!query || query.trim().length < 2) {
     return res.status(400).json({
@@ -198,21 +208,13 @@ app.get("/search", (req, res) => {
 
   const searchTerm = `%${query}%`;
 
-  const books = db.prepare(searchQuery).all(
-    searchTerm,
-    searchTerm,
-    searchTerm,
-    searchTerm,
-    limit,
-    offset,
-  );
+  const books = db.db
+    .prepare(searchQuery)
+    .all(searchTerm, searchTerm, searchTerm, searchTerm, limit, offset);
 
-  const { total } = db.prepare(countQuery).get(
-    searchTerm,
-    searchTerm,
-    searchTerm,
-    searchTerm,
-  );
+  const { total } = db.db
+    .prepare(countQuery)
+    .get(searchTerm, searchTerm, searchTerm, searchTerm);
 
   const hasMore = offset + books.length < total;
   const totalPages = Math.ceil(total / limit);

@@ -109,7 +109,9 @@ const BookDetailsModal = ({
                   <h3 className="font-semibold text-gray-800 dark:text-white">
                     Description
                   </h3>
-                  <p className="line-clamp-4 sm:line-clamp-5">{book.bookData?.description}</p>
+                  <p className="line-clamp-4 sm:line-clamp-5">
+                    {book.bookData?.description}
+                  </p>
                 </div>
               )}
 

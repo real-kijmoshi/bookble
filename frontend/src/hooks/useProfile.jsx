@@ -10,7 +10,9 @@ export default function useProfile() {
   const getStoredProfile = () => {
     const stored = localStorage.getItem(STORAGE_KEY);
     try {
-      return stored && stored !== "undefined" ? JSON.parse(stored) : { collection: [] };
+      return stored && stored !== "undefined"
+        ? JSON.parse(stored)
+        : { collection: [] };
     } catch (e) {
       console.error("Error parsing stored profile:", e);
       return { collection: [] };
@@ -54,7 +56,7 @@ export default function useProfile() {
       try {
         setIsLoading(true);
         const data = await makeAuthenticatedRequest(`${API_URL}/profile`);
-        
+
         if (data.message) {
           throw new Error(data.message);
         }
@@ -64,7 +66,7 @@ export default function useProfile() {
           ...data.user,
           collection: books,
         };
-        
+
         updateProfile(updatedUser);
       } catch (err) {
         setError(err.message);
@@ -77,107 +79,128 @@ export default function useProfile() {
     fetchProfile();
   }, [makeAuthenticatedRequest, updateProfile]);
 
-  const addBookToCollection = useCallback(async (book, provider) => {
-    setIsLoading(true);
-    try {
-      const data = await makeAuthenticatedRequest(`${API_URL}/collection`, {
-        method: "POST",
-        body: JSON.stringify({ isbn: book, provider }),
-      });
+  const addBookToCollection = useCallback(
+    async (book, provider) => {
+      setIsLoading(true);
+      try {
+        const data = await makeAuthenticatedRequest(`${API_URL}/collection`, {
+          method: "POST",
+          body: JSON.stringify({ isbn: book, provider }),
+        });
 
-      if (data.error) throw new Error(data.error);
-      
-      // Instead of page reload, fetch updated book data
-      const updatedBook = await fetchBooks([book]);
-      updateProfile(prev => ({
-        ...prev,
-        collection: [...prev.collection, ...updatedBook],
-      }));
+        if (data.error) throw new Error(data.error);
 
-      return data;
-    } catch (err) {
-      setError(err.message);
-      console.error("Add book error:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [makeAuthenticatedRequest, updateProfile]);
+        // Instead of page reload, fetch updated book data
+        const updatedBook = await fetchBooks([book]);
+        updateProfile((prev) => ({
+          ...prev,
+          collection: [...prev.collection, ...updatedBook],
+        }));
 
-  const deleteBookFromCollection = useCallback(async (book) => {
-    setIsLoading(true);
-    try {
-      const data = await makeAuthenticatedRequest(`${API_URL}/collection/${book}`, {
-        method: "DELETE",
-      });
+        return data;
+      } catch (err) {
+        setError(err.message);
+        console.error("Add book error:", err);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [makeAuthenticatedRequest, updateProfile],
+  );
 
-      updateProfile(prev => ({
-        ...prev,
-        collection: prev.collection.filter(b => b.isbn !== book),
-      }));
+  const deleteBookFromCollection = useCallback(
+    async (book) => {
+      setIsLoading(true);
+      try {
+        const data = await makeAuthenticatedRequest(
+          `${API_URL}/collection/${book}`,
+          {
+            method: "DELETE",
+          },
+        );
 
-      return data;
-    } catch (err) {
-      setError(err.message);
-      console.error("Delete book error:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [makeAuthenticatedRequest, updateProfile]);
+        updateProfile((prev) => ({
+          ...prev,
+          collection: prev.collection.filter((b) => b.isbn !== book),
+        }));
 
-  const onRatingChange = useCallback(async (book, rating) => {
-    setIsLoading(true);
-    try {
-      const data = await makeAuthenticatedRequest(`${API_URL}/collection/${book}`, {
-        method: "PUT",
-        body: JSON.stringify({ rating }),
-      });
+        return data;
+      } catch (err) {
+        setError(err.message);
+        console.error("Delete book error:", err);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [makeAuthenticatedRequest, updateProfile],
+  );
 
-      updateProfile(prev => ({
-        ...prev,
-        collection: prev.collection.map(b =>
-          b.isbn === book ? { ...b, rating } : b
-        ),
-      }));
+  const onRatingChange = useCallback(
+    async (book, rating) => {
+      setIsLoading(true);
+      try {
+        const data = await makeAuthenticatedRequest(
+          `${API_URL}/collection/${book}`,
+          {
+            method: "PUT",
+            body: JSON.stringify({ rating }),
+          },
+        );
 
-      return data;
-    } catch (err) {
-      setError(err.message);
-      console.error("Rating change error:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [makeAuthenticatedRequest, updateProfile]);
+        updateProfile((prev) => ({
+          ...prev,
+          collection: prev.collection.map((b) =>
+            b.isbn === book ? { ...b, rating } : b,
+          ),
+        }));
 
-  const onReadToggle = useCallback(async (book) => {
-    setIsLoading(true);
-    try {
-      const currentBook = profile.collection.find(b => b.isbn === book);
-      if (!currentBook) throw new Error("Book not found in collection");
+        return data;
+      } catch (err) {
+        setError(err.message);
+        console.error("Rating change error:", err);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [makeAuthenticatedRequest, updateProfile],
+  );
 
-      const data = await makeAuthenticatedRequest(`${API_URL}/collection/${book}`, {
-        method: "PUT",
-        body: JSON.stringify({ read: !currentBook.read }),
-      });
+  const onReadToggle = useCallback(
+    async (book) => {
+      setIsLoading(true);
+      try {
+        const currentBook = profile.collection.find((b) => b.isbn === book);
+        if (!currentBook) throw new Error("Book not found in collection");
 
-      updateProfile(prev => ({
-        ...prev,
-        collection: prev.collection.map(b =>
-          b.isbn === book ? { ...b, read: !b.read } : b
-        ),
-      }));
+        const data = await makeAuthenticatedRequest(
+          `${API_URL}/collection/${book}`,
+          {
+            method: "PUT",
+            body: JSON.stringify({ read: !currentBook.read }),
+          },
+        );
 
-      return data;
-    } catch (err) {
-      setError(err.message);
-      console.error("Read toggle error:", err);
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [makeAuthenticatedRequest, updateProfile, profile.collection]);
+        updateProfile((prev) => ({
+          ...prev,
+          collection: prev.collection.map((b) =>
+            b.isbn === book ? { ...b, read: !b.read } : b,
+          ),
+        }));
+
+        return data;
+      } catch (err) {
+        setError(err.message);
+        console.error("Read toggle error:", err);
+        throw err;
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [makeAuthenticatedRequest, updateProfile, profile.collection],
+  );
 
   return {
     profile,

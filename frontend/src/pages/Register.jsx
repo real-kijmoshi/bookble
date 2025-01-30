@@ -22,7 +22,8 @@ export default function Register() {
   const validateUsername = (value) => {
     if (!value) return "Username is required";
     if (value.length < 3) return "Username must be at least 3 characters";
-    if (!/^[a-zA-Z0-9_]+$/.test(value)) return "Username can only contain letters, numbers, and underscores";
+    if (!/^[a-zA-Z0-9_]+$/.test(value))
+      return "Username can only contain letters, numbers, and underscores";
     return "";
   };
 
@@ -35,9 +36,12 @@ export default function Register() {
   const validatePassword = (value) => {
     if (!value) return "Password is required";
     if (value.length < 8) return "Password must be at least 8 characters";
-    if (!/[A-Z]/.test(value)) return "Password must contain at least one uppercase letter";
-    if (!/[a-z]/.test(value)) return "Password must contain at least one lowercase letter";
-    if (!/[0-9]/.test(value)) return "Password must contain at least one number";
+    if (!/[A-Z]/.test(value))
+      return "Password must contain at least one uppercase letter";
+    if (!/[a-z]/.test(value))
+      return "Password must contain at least one lowercase letter";
+    if (!/[0-9]/.test(value))
+      return "Password must contain at least one number";
     return "";
   };
 
@@ -194,7 +198,8 @@ export default function Register() {
                 value={formData.confirmPassword}
                 onChange={handleChange("confirmPassword")}
                 className={`w-full p-2 border rounded-md bg-white dark:bg-gray-800 text-gray-800 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  formErrors.confirmPassword && "border-red-500 focus:ring-red-500"
+                  formErrors.confirmPassword &&
+                  "border-red-500 focus:ring-red-500"
                 }`}
               />
               <button
@@ -215,14 +220,16 @@ export default function Register() {
           <button
             type="submit"
             className="w-full py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-300 disabled:opacity-50 disabled:cursor-not-allowed"
-            disabled={loading || Object.values(formErrors).some((error) => error)}
+            disabled={
+              loading || Object.values(formErrors).some((error) => error)
+            }
           >
             {loading ? "Creating Account..." : "Register"}
           </button>
 
           <div className="text-center mt-4">
             <span className="text-sm text-gray-600 dark:text-gray-400">
-              Already have an account? {" "}
+              Already have an account?{" "}
               <button
                 type="button"
                 className="text-blue-500 hover:underline focus:outline-none"

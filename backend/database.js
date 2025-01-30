@@ -31,7 +31,7 @@ const createTables = () => {
         cover TEXT NOT NULL,
         description TEXT NOT NULL
       );
-  `)
+  `);
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS reviews (
@@ -124,16 +124,15 @@ const createCollection = (user_id, provider, isbn, read, rating) => {
 
 const getBooks = () => {
   return db.prepare("SELECT * FROM books").all();
-}
+};
 
 const getBook = (id) => {
   return db.prepare("SELECT * FROM books WHERE id = ?").get(id);
-}
+};
 
 const getBooksByIsbn = (isbn) => {
   return db.prepare("SELECT * FROM books WHERE isbn = ?").all(isbn);
-}
-
+};
 
 if (process.argv.includes("--init")) {
   createTables();
@@ -169,5 +168,7 @@ module.exports = {
 
   getBooks,
   getBook,
-  getBooksByIsbn
+  getBooksByIsbn,
+
+  db,
 };

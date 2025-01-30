@@ -15,32 +15,6 @@ const API_URL = import.meta.env.VITE_API_BASE;
 
 // Book search providers
 const PROVIDERS = {
-  openlibrary: {
-    name: "Open Library",
-    search: async (query, limit) => {
-      try {
-        const response = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}${limit === "All" ? "" : `&limit=${limit}`}`,
-        );
-        const data = await response.json();
-
-        return data.docs
-          .filter((book) => book.cover_i && book.isbn)
-          .slice(0, limit)
-          .map((book) => ({
-            title: book.title,
-            author: book.author_name?.[0] || "Unknown Author",
-            isbn: book.isbn[0],
-            cover: `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`,
-            publishDate: book.first_publish_year,
-            source: "openlibrary.org",
-          }));
-      } catch (error) {
-        console.error("Open Library search error:", error);
-        return [];
-      }
-    },
-  },
   googlebooks: {
     name: "Google Books",
     search: async (query, limit) => {
@@ -74,6 +48,7 @@ const PROVIDERS = {
       }
     },
   },
+
   bookble: {
     name: "bookble",
     search: async (query, limit) => {
@@ -83,7 +58,7 @@ const PROVIDERS = {
         );
         const data = await response.json();
 
-        return data.map((book) => ({
+        return data.books.map((book) => ({
           title: book.title,
           author: book.author,
           isbn: book.isbn,
@@ -95,7 +70,33 @@ const PROVIDERS = {
         console.error("bookble search error:", error);
         return [];
       }
-    }
+    },
+  },
+  openlibrary: {
+    name: "Open Library",
+    search: async (query, limit) => {
+      try {
+        const response = await fetch(
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}${limit === "All" ? "" : `&limit=${limit}`}`,
+        );
+        const data = await response.json();
+
+        return data.docs
+          .filter((book) => book.cover_i && book.isbn)
+          .slice(0, limit)
+          .map((book) => ({
+            title: book.title,
+            author: book.author_name?.[0] || "Unknown Author",
+            isbn: book.isbn[0],
+            cover: `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`,
+            publishDate: book.first_publish_year,
+            source: "openlibrary.org",
+          }));
+      } catch (error) {
+        console.error("Open Library search error:", error);
+        return [];
+      }
+    },
   },
 };
 
@@ -106,7 +107,7 @@ const BookSearch = ({ onAddBook, onClose }) => {
   const [showScanner, setShowScanner] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
-  const [currentProvider, setCurrentProvider] = useState("openlibrary");
+  const [currentProvider, setCurrentProvider] = useState("googlebooks");
   const [resultLimit, setResultLimit] = useState(10);
   const [showProviderDropdown, setShowProviderDropdown] = useState(false);
   const [showLimitDropdown, setShowLimitDropdown] = useState(false);
