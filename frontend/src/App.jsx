@@ -259,18 +259,30 @@ const BookCollection = ({
           {books
             .sort((a, b) => {
               if (sortBy === "title")
-                return a.bookData?.title.localeCompare(b.bookData.title);
-              if (sortBy === "author")
-                return a.bookData?.authors[0].name.localeCompare(
-                  b.bookData?.authors[0].name,
+                return (a.bookData?.title ?? "").localeCompare(
+                  b.bookData?.title ?? "",
                 );
-              if (sortBy === "rating-desc") return b.rating - a.rating;
-              if (sortBy === "rating-asc") return a.rating - b.rating;
-              if (sortBy === "read") return b.read - a.read;
-              if (sortBy === "unread") return a.read - b.read;
+
+              if (sortBy === "author")
+                return (a.bookData?.authors?.[0]?.name ?? "").localeCompare(
+                  b.bookData?.authors?.[0]?.name ?? "",
+                );
+
+              if (sortBy === "rating-desc")
+                return (b.rating ?? 0) - (a.rating ?? 0);
+              if (sortBy === "rating-asc")
+                return (a.rating ?? 0) - (b.rating ?? 0);
+              if (sortBy === "read") return (b.read ?? 0) - (a.read ?? 0);
+              if (sortBy === "unread") return (a.read ?? 0) - (b.read ?? 0);
+
+              return 0; // Default case
             })
             .map((book) => (
-              <BookCard key={book.isbn} book={book} onClick={onBookSelect} />
+              <BookCard
+                key={book.isbn ?? Math.random()}
+                book={book}
+                onClick={onBookSelect}
+              />
             ))}
         </AnimatePresence>
       </motion.div>
