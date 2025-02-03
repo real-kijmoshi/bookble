@@ -208,11 +208,6 @@ export default function Login() {
           </form>
         </div>
       </div>
-
-      
-      <h2 className="fixed bottom-4 right-4 text-gray-400 dark:text-gray-500 text-sm">
-          data stored here is temporary for now and will be removed after the server restarts
-      </h2>
     </div>
   );
 }
