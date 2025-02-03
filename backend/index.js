@@ -13,7 +13,6 @@ const PORT = process.env.PORT || 3001;
 mongoose.connect(process.env.MONGODB_URI)
   .then(() => {
     console.log('Connected to MongoDB');
-    initDatabase();
   })
   .catch(err => console.error('MongoDB connection error:', err));
 
@@ -39,7 +38,6 @@ const auth = async (req, res, next) => {
     req.isAuthenticated = true;
     req.user = { ...user.toObject(), password: undefined, collection: collections};
 
-    console.log('Authenticated:', req.user);
     next();
   } catch (error) {
     req.isAuthenticated = false;

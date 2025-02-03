@@ -47,54 +47,12 @@ const Book = mongoose.model('Book', BookSchema);
 const Collection = mongoose.model('Collection', CollectionSchema);
 const Review = mongoose.model('Review', ReviewSchema);
 
-//dummy data
-async function initDatabase() {
-  if (await User.countDocuments() === 0) {
-    const hash = await bcrypt.hash('test', 10);
-    const user = await User.create({
-      name: 'test',
-      password: hash,
-      email: 'a@a.a'
-    });
 
-    await Promise.all([
-      Collection.create({
-        user: user._id,
-        provider: 'openlibrary.org',
-        book: '9780547928241',
-        read: true,
-        rating: 5
-      }),
-      Collection.create({
-        user: user._id,
-        provider: 'openlibrary.org',
-        book: '9780547928203',
-        read: true,
-        rating: 4
-      }),
-      Collection.create({
-        user: user._id,
-        provider: 'openlibrary.org',
-        book: '9780553382563',
-        read: true,
-        rating: 4
-      }),
-      Collection.create({
-        user: user._id,
-        provider: 'openlibrary.org',
-        book: '9780345428547',
-        read: false,
-        rating: null
-      })
-    ]);
-  }
-}
 
 
 module.exports = {
   User,
   Book,
   Collection,
-  Review,
-  initDatabase
+  Review
 };
