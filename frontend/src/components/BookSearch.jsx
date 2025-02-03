@@ -77,21 +77,32 @@ const PROVIDERS = {
     search: async (query, limit) => {
       try {
         const response = await fetch(
-          `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}${limit === "All" ? "" : `&limit=${limit}`}`,
+          `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&fields=title,author_name,cover_i,edition_key,first_publish_year,isbn${limit ? `&limit=${limit}` : ""}`
         );
         const data = await response.json();
-
-        return data.docs
-          .filter((book) => book.cover_i && book.isbn)
-          .slice(0, limit)
-          .map((book) => ({
-            title: book.title,
-            author: book.author_name?.[0] || "Unknown Author",
-            isbn: book.isbn[0],
-            cover: `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`,
-            publishDate: book.first_publish_year,
-            source: "openlibrary.org",
-          }));
+  
+        const books = data.docs
+          .filter((book) => book.cover_i && book.edition_key)
+          .slice(0, limit || data.docs.length)
+          .map(async (book) => {
+            const editionResponse = await fetch(
+              `https://openlibrary.org/api/books?bibkeys=OLID:${book.edition_key[0]}&jscmd=data&format=json`
+            );
+            const editionData = await editionResponse.json();
+            const editionKey = `OLID:${book.edition_key[0]}`;
+            const editionInfo = editionData[editionKey] || {};
+  
+            return {
+              title: book.title,
+              author: book.author_name?.[0] || "Unknown Author",
+              isbn: editionInfo.identifiers?.isbn_13?.[0] || editionInfo.identifiers?.isbn_10?.[0] || "ISBN not available",
+              cover: `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg`,
+              publishDate: book.first_publish_year,
+              source: "openlibrary.org",
+            };
+          });
+  
+        return await Promise.all(books);
       } catch (error) {
         console.error("Open Library search error:", error);
         return [];
@@ -249,8 +260,21 @@ const BookSearch = ({ onAddBook, onClose }) => {
           </div>
 
           {isSearching && (
-            <div className="flex justify-center items-center py-8">
+            <div className="flex flex-col items-center space-y-4 py-8">
               <Loader2 className="animate-spin text-blue-500 h-12 w-12" />
+
+              <span className="text-gray-500 dark:text-gray-400">
+                Searching for books from {PROVIDERS[currentProvider].name}...
+              </span>
+
+              {
+                currentProvider == "openlibrary" && (
+                  <span className="text-gray-500 dark:text-gray-400">
+                    Note: Open Library search is slower than other providers. And may add wrong Book, we are working on it.
+                  </span>
+                )
+              }
+
             </div>
           )}
 

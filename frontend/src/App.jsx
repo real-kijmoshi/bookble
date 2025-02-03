@@ -133,7 +133,7 @@ function App() {
 
         <Profile
           profile={profile}
-          isAnyModalOpen={showAddBook || selectedBook}
+          isAnyModalOpen={!!(selectedBook || showAddBook)}
         />
         
       </main>
@@ -273,7 +273,7 @@ const BookCollection = ({
             .map((book) => (
               <BookCard
                 key={book.isbn ?? Math.random()}
-                book={{ ...book, read: book.read ? true : false /* sqlite is dumb and stores booleans as 0/1 */ }}
+                book={{ ...book}}
                 onClick={onBookSelect}
               />
             ))}

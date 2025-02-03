@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import fetchBooks from "../utils/fetchBooks";
 
@@ -68,8 +67,8 @@ export default function useProfile() {
         body: JSON.stringify({ isbn: book, provider }),
       });
     },
-    onSuccess: async (_, { book }) => {
-      const updatedBook = await fetchBooks([book]);
+    onSuccess: async (_, { book, provider }) => {
+      const updatedBook = await fetchBooks([{ book, provider }]);
       queryClient.setQueryData(["profile"], (prev) => ({
         ...prev,
         collection: [...prev.collection, ...updatedBook],

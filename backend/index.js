@@ -1,227 +1,229 @@
-const express = require("express");
-const cors = require("cors");
-const jwt = require("jsonwebtoken");
-const db = require("./database");
-const bycrypt = require("bcrypt");
-
-require("dotenv").config();
+const express = require('express');
+const cors = require('cors');
+const jwt = require('jsonwebtoken');
+const mongoose = require('mongoose');
+const bcrypt = require('bcrypt');
+const { User, Book, Collection, Review, initDatabase } = require('./database');
+require('dotenv').config();
 
 const app = express();
+const PORT = process.env.PORT || 3001;
 
-const PORT = process.env.PORT || 5000;
+// Connect to MongoDB
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+    initDatabase();
+  })
+  .catch(err => console.error('MongoDB connection error:', err));
 
+// Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(
-  cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-  }),
-);
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE'] }));
 
-app.use((req, res, next) => {
-  const token = req.headers.authorization;
+// Auth middleware
+const auth = async (req, res, next) => {
+  try {
+    const token = req.headers.authorization;
+    if (!token) {
+      req.isAuthenticated = false;
+      return next();
+    }
 
-  if (token) {
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) {
-        return res.status(401).json({ message: "Invalid token" });
-      }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const user = await User.findById(decoded.id);
+    if (!user) throw new Error();
 
-      const { id } = decoded;
-      req.user = db.getUser(id);
-      req.isAuthenticated = true;
-    });
-  } else {
-    req.isAuthenticated = false;
-  }
+    const collections = await Collection.find({ user: user._id });
+    req.isAuthenticated = true;
+    req.user = { ...user.toObject(), password: undefined, collection: collections};
 
-  next();
-});
-
-const protected = (req, res, next) => {
-  if (req.isAuthenticated) {
+    console.log('Authenticated:', req.user);
     next();
-  } else {
-    res.status(401).json({ message: "Unauthorized" });
+  } catch (error) {
+    req.isAuthenticated = false;
+    next();
   }
 };
 
-app.get("/", (req, res) => {
-  res.send("Hello World");
+const protected = (req, res, next) => {
+  if (req.isAuthenticated) return next();
+  res.status(401).json({ message: 'Unauthorized' });
+};
+
+app.use(auth);
+
+// Routes
+app.get('/', (req, res) => {
+  res.send('Hello World');
 });
 
-app.post("/login", (req, res) => {
-  const { identifier, password } = req.body;
-
-  const user = db.getUserByEmail(identifier) || db.getUserByName(identifier);
-
-  if (!user) {
-    return res.status(401).json({ message: "Invalid credentials" });
-  }
-  const collection = db.getCollectionsByUser(user.id);
-
-  user.collection = collection;
-
-  if (bycrypt.compareSync(password, user.password)) {
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
-      expiresIn: "30d",
+app.post('/login', async (req, res) => {
+  try {
+    const { identifier, password } = req.body;
+    const user = await User.findOne({
+      $or: [{ email: identifier }, { name: identifier }]
     });
 
-    res.json({ token, user: { ...user, password: undefined } });
-  } else {
-    res.status(401).json({ message: "Invalid credentials" });
-  }
-});
 
-app.post("/register", (req, res) => {
-  const { username, email, password } = req.body;
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(401).json({ message: 'Invalid credentials' });
+    }
 
-  const user = db.getUserByEmail(email) || db.getUserByName(username);
-
-  if (user) {
-    return res.status(400).json({ message: "User already exists" });
-  }
-
-  const hash = bycrypt.hashSync(password, 10);
-
-  db.createUser(username, hash, email);
-
-  const newUser = db.getUserByEmail(email);
-
-  const token = jwt.sign({ id: newUser.id }, process.env.JWT_SECRET, {
-    expiresIn: "30d",
-  });
-
-  const collection = db.getCollectionsByUser(newUser.id);
-
-  newUser.collection = collection;
-
-  res.json({
-    message: "User created",
-    token,
-    user: { ...newUser, password: undefined },
-  });
-});
-
-app.get("/profile", protected, (req, res) => {
-  if (req.isAuthenticated) {
-    console.log("user: ", req.user);
-    res.json({ user: req.user });
-  } else {
-    res.status(401).json({ message: "Unauthorized" });
-  }
-});
-
-app.post("/collection", protected, (req, res) => {
-  const { isbn, provider } = req.body;
-
-  const collection = db.getCollectionByUserAndIsbn(req.user.id, isbn);
-
-  if (collection) {
-    return res.status(400).json({ message: "Book already in collection" });
-  }
-
-  db.createCollection(req.user.id, provider, isbn, false, 0);
-
-  res.json({ message: "Collection updated" });
-});
-
-app.put("/collection/:isbn", protected, (req, res) => {
-  const { isbn } = req.params;
-  const { read, rating } = req.body;
-
-  const collection = db.getCollectionByUserAndIsbn(req.user.id, isbn);
-
-  if (!collection) {
-    return res.status(404).json({ message: "Book not found in collection" });
-  }
-
-  console.log("updating collection");
-  console.log("user id: ", req.user.id);
-  console.log("isbn: ", isbn);
-  console.log("read: ", collection.read, "new read: ", read);
-  console.log("rating: ", collection.rating, "new rating: ", rating);
-
-  if (read !== undefined) {
-    collection.read = read;
-  }
-
-  if (rating !== undefined) {
-    collection.rating = rating;
-  }
-
-  db.updateCollection(req.user.id, isbn, collection.read, collection.rating);
-
-  res.json({ message: "Collection updated" });
-});
-
-app.delete("/collection/:isbn", protected, (req, res) => {
-  const { isbn } = req.params;
-
-  const collection = db.getCollectionByUserAndIsbn(req.user.id, isbn);
-
-  if (!collection) {
-    return res.status(404).json({ message: "Book not found in collection" });
-  }
-
-  db.deleteCollection(req.user.id, isbn);
-
-  res.json({ message: "Collection updated" });
-});
-
-app.get("/search", (req, res) => {
-  const {
-    query,
-    limit = 20,
-    offset = 0,
-    sort = "title",
-    order = "asc",
-  } = req.query;
-
-  if (!query || query.trim().length < 2) {
-    return res.status(400).json({
-      error: "Search query must be at least 2 characters long",
+    const collection = await Collection.find({ user: user._id });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '30d'
     });
+
+    res.json({ 
+      token, 
+      user: { ...user.toObject(), password: undefined, collection } 
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
   }
+});
 
-  const allowedSortFields = ["title", "author", "published_date", "rating"];
-  const sanitizedSort = allowedSortFields.includes(sort) ? sort : "title";
-  const sanitizedOrder = order.toLowerCase() === "desc" ? "DESC" : "ASC";
+app.post('/register', async (req, res) => {
+  try {
+    const { username, email, password } = req.body;
+    
+    const existingUser = await User.findOne({
+      $or: [{ email }, { name: username }]
+    });
 
-  const searchQuery = `
-    SELECT * FROM books 
-    WHERE title LIKE ? 
-    OR author LIKE ? 
-    OR description LIKE ?
-    OR isbn LIKE ?
-    ORDER BY ${sanitizedSort} ${sanitizedOrder}
-    LIMIT ? OFFSET ?
-  `;
+    if (existingUser) {
+      return res.status(400).json({ message: 'User already exists' });
+    }
 
-  const countQuery = `
-    SELECT COUNT(*) as total FROM books 
-    WHERE title LIKE ? 
-    OR author LIKE ? 
-    OR description LIKE ?
-    OR isbn LIKE ?
-  `;
+    const user = await User.create({ name: username, email, password });
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, {
+      expiresIn: '30d'
+    });
 
-  const searchTerm = `%${query}%`;
+    res.json({
+      message: 'User created',
+      token,
+      user: { ...user.toObject(), password: undefined, collection: [] }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
 
-  const books = db.db
-    .prepare(searchQuery)
-    .all(searchTerm, searchTerm, searchTerm, searchTerm, limit, offset);
+app.get('/profile', protected, (req, res) => {
+  res.json({ user: req.user });
+});
 
-  const { total } = db.db
-    .prepare(countQuery)
-    .get(searchTerm, searchTerm, searchTerm, searchTerm);
+app.post('/collection', protected, async (req, res) => {
+  try {
+    const { isbn, provider } = req.body;
+    const existingCollection = await Collection.findOne({
+      user: req.user._id,
+      book: isbn
+    });
 
-  const hasMore = offset + books.length < total;
-  const totalPages = Math.ceil(total / limit);
-  const currentPage = Math.floor(offset / limit) + 1;
+    if (existingCollection) {
+      return res.status(400).json({ message: 'Book already in collection' });
+    }
 
-  res.json({ books, total, hasMore, totalPages, currentPage });
+    await Collection.create({
+      user: req.user._id,
+      book: isbn,
+      provider,
+      read: false,
+      rating: 0
+    });
+
+    res.json({ message: 'Collection updated' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.put('/collection/:isbn', protected, async (req, res) => {
+  try {
+    const { isbn } = req.params;
+    const { read, rating } = req.body;
+    
+    const collection = await Collection.findOneAndUpdate(
+      { user: req.user._id, book: isbn },
+      { ...(read !== undefined && { read }), ...(rating !== undefined && { rating }) },
+      { new: true }
+    );
+
+    if (!collection) {
+      return res.status(404).json({ message: 'Book not found in collection' });
+    }
+
+    res.json({ message: 'Collection updated' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.delete('/collection/:isbn', protected, async (req, res) => {
+  try {
+    const result = await Collection.findOneAndDelete({
+      user: req.user._id,
+      book: req.params.isbn
+    });
+
+    if (!result) {
+      return res.status(404).json({ message: 'Book not found in collection' });
+    }
+
+    res.json({ message: 'Collection updated' });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.get('/search', async (req, res) => {
+  try {
+    const {
+      query,
+      limit = 20,
+      offset = 0,
+      sort = 'title',
+      order = 'asc'
+    } = req.query;
+
+    if (!query || query.trim().length < 2) {
+      return res.status(400).json({
+        error: 'Search query must be at least 2 characters long'
+      });
+    }
+
+    const searchRegex = new RegExp(query, 'i');
+    const filter = {
+      $or: [
+        { title: searchRegex },
+        { author: searchRegex },
+        { description: searchRegex },
+        { isbn: searchRegex }
+      ]
+    };
+
+    const [books, total] = await Promise.all([
+      Book.find(filter)
+        .sort({ [sort]: order === 'desc' ? -1 : 1 })
+        .skip(Number(offset))
+        .limit(Number(limit)),
+      Book.countDocuments(filter)
+    ]);
+
+    res.json({
+      books,
+      total,
+      hasMore: offset + books.length < total,
+      totalPages: Math.ceil(total / limit),
+      currentPage: Math.floor(offset / limit) + 1
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
 });
 
 app.listen(PORT, () => {

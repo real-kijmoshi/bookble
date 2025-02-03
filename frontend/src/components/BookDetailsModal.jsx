@@ -5,13 +5,13 @@ import PropTypes from "prop-types";
 import { useEffect, useState } from "react";
 
 const BookDetailsModal = ({
-  book,
-  onClose,
-  onRatingChange,
-  onReadToggle,
-  onDelete,
+  book = {},
+  onClose = () => {},
+  onRatingChange = () => {},
+  onReadToggle = () => {},
+  onDelete = () => {},
 }) => {
-  const [rating, setRating] = useState(book?.rating || 0);
+  const [rating, setRating] = useState(0);
 
   useEffect(() => {
     setRating(book?.rating || 0);
@@ -21,6 +21,11 @@ const BookDetailsModal = ({
     setRating(rating);
     onRatingChange(isbn, rating);
   };
+
+  // Safely extract nested properties with default values
+  const bookData = book?.bookData || {};
+  const authors = bookData.authors || [];
+  const cover = bookData.cover || {};
 
   if (!book) return null;
 
@@ -49,10 +54,10 @@ const BookDetailsModal = ({
 
           <div className="flex flex-col md:grid md:grid-cols-2 gap-4 sm:gap-6 p-4 sm:p-6">
             <div className="relative w-full max-w-[240px] mx-auto md:max-w-none aspect-[2/3]">
-              {book.bookData?.cover?.large ? (
+              {cover.large ? (
                 <img
-                  src={book.bookData?.cover.large}
-                  alt={book.bookData?.title}
+                  src={cover.large}
+                  alt={bookData.title || 'Book Cover'}
                   className="w-full h-full object-cover rounded-lg"
                 />
               ) : (
@@ -64,26 +69,27 @@ const BookDetailsModal = ({
 
             <div className="space-y-3 sm:space-y-4">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-800 dark:text-white">
-                {book.bookData?.title}
+                {bookData.title || 'Untitled Book'}
               </h2>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-300">
                 by{" "}
-                {book.bookData?.authors
-                  ?.map((a) => (
-                    <a
-                      key={a.url}
-                      href={a.url}
-                      className="text-blue-500 hover:underline"
-                    >
-                      {a.name}
-                    </a>
-                  ))
-                  .reduce((prev, curr) => [prev, ", ", curr]) ||
-                  "Unknown Author"}
+                {authors.length > 0
+                  ? authors
+                      .map((a) => (
+                        <a
+                          key={a.url || Math.random()}
+                          href={a.url}
+                          className="text-blue-500 hover:underline"
+                        >
+                          {a.name}
+                        </a>
+                      ))
+                      .reduce((prev, curr) => [prev, ", ", curr])
+                  : "Unknown Author"}
               </p>
 
               <BookReadStatus
-                read={book.read}
+                read={book.read || false}
                 onToggle={() => onReadToggle(book.isbn)}
               />
 
@@ -100,17 +106,17 @@ const BookDetailsModal = ({
                   />
                 ))}
                 <span className="ml-2 text-sm sm:text-base text-gray-600 dark:text-gray-300">
-                  ({rating?.toFixed(1) || "No rating"})
+                  {rating ? `(${rating?.toFixed(1)})` : "No rating"}
                 </span>
               </div>
 
-              {book.bookData?.description && (
+              {bookData.description && (
                 <div className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 space-y-1 sm:space-y-2">
                   <h3 className="font-semibold text-gray-800 dark:text-white">
                     Description
                   </h3>
                   <p className="line-clamp-4 sm:line-clamp-5">
-                    {book.bookData?.description}
+                    {bookData.description}
                   </p>
                 </div>
               )}
@@ -119,18 +125,20 @@ const BookDetailsModal = ({
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Pages</p>
                   <p className="text-gray-800 dark:text-white">
-                    {book.bookData?.number_of_pages || "N/A"}
+                    {bookData.number_of_pages || "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Published</p>
                   <p className="text-gray-800 dark:text-white">
-                    {book.bookData.publish_date || "N/A"}
+                    {bookData.publish_date || "N/A"}
                   </p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">ISBN</p>
-                  <p className="text-gray-800 dark:text-white">{book.isbn}</p>
+                  <p className="text-gray-800 dark:text-white">
+                    {book.isbn || "Unknown"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -138,13 +146,13 @@ const BookDetailsModal = ({
 
           <div className="flex justify-between items-center p-4 mt-2 border-t border-gray-200 dark:border-gray-700">
             <button
-              onClick={() => onDelete(book.isbn)}
+              onClick={() => onDelete(book?.isbn)}
               className="text-xs sm:text-sm text-red-500 cursor-pointer dark:text-red-400 hover:text-red-600 dark:hover:text-red-500"
             >
               Remove Book
             </button>
             <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400">
-              Provided by {book.provider}
+              Provided by {book?.provider || 'Unknown'}
             </p>
           </div>
         </motion.div>
@@ -174,10 +182,10 @@ BookDetailsModal.propTypes = {
     }),
     provider: PropTypes.string,
   }),
-  onClose: PropTypes.func.isRequired,
-  onRatingChange: PropTypes.func.isRequired,
-  onReadToggle: PropTypes.func.isRequired,
-  onDelete: PropTypes.func.isRequired,
+  onClose: PropTypes.func,
+  onRatingChange: PropTypes.func,
+  onReadToggle: PropTypes.func,
+  onDelete: PropTypes.func,
 };
 
 export default BookDetailsModal;
