@@ -7,7 +7,7 @@ const STORAGE_KEY = "profile";
 const makeAuthenticatedRequest = async (url, options = {}) => {
   const token = localStorage.getItem("token");
   if (!token) {
-    throw new Error("Not signed in");
+    throw new Error("Unauthorized: Missing token");
   }
 
   const response = await fetch(url, {
@@ -20,7 +20,14 @@ const makeAuthenticatedRequest = async (url, options = {}) => {
   });
 
   if (response.status === 401) {
-    throw new Error("Unauthorized: Invalid token");
+    localStorage.removeItem("token");
+    localStorage.removeItem("profile");
+
+    console.error("Unauthorized: Token expired or invalid");
+    
+    //refresh page
+    window.location.reload();
+
   }
 
   if (!response.ok) {
