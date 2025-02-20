@@ -36,7 +36,7 @@ const BookCard = ({ book, onClick }) => {
           </div>
         )}
 
-        {book.rating && (
+        {!!(book.rating) && (
           <div className="flex items-center space-x-3 text-yellow-400 absolute bottom-4 right-4 bg-white dark:bg-gray-800 p-2 rounded-full shadow-md">
             {[...Array(book.rating)].map((_, i) => (
               <LucideStar key={i} className="h-5 w-5" />

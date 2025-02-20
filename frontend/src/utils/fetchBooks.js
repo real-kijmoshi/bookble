@@ -21,7 +21,8 @@
 
 const API_ENDPOINTS = {
   OPENLIBRARY: 'https://openlibrary.org/api/books.json',
-  GOOGLEBOOKS: 'https://www.googleapis.com/books/v1/volumes'
+  GOOGLEBOOKS: 'https://www.googleapis.com/books/v1/volumes',
+  BOOKBLE: import.meta.env.VITE_API_BASE + '/books'
 };
 
 const DEFAULT_BOOK_DATA = {
@@ -49,6 +50,9 @@ const fetchBook = async (bookData) => {
         break;
       case "googlebooks.com":
         data = await fetchGoogleBook(book);
+        break;
+      case "bookble":
+        data = await fetchBookbleBook(book);
         break;
       default:
         throw new Error(`Unsupported provider: ${provider}`);
@@ -141,6 +145,41 @@ const fetchGoogleBook = async (isbn) => {
     isbn: fetchedData.industryIdentifiers?.find((id) => id.type === "ISBN_13")?.identifier || isbn
   };
 };
+
+/**
+ * Fetches book data from Bookble
+ * @param {string} bookId - Book ID
+ * @returns {Promise<Object>} Standardized book data
+ */
+const fetchBookbleBook = async (bookId) => {
+  const response = await fetch(
+    `${API_ENDPOINTS.BOOKBLE}/${bookId}`
+  );
+
+  if (!response.ok) {
+    throw new Error(`Bookble API error: ${response.status}`);
+  }
+
+  const {book: fetchedData} = await response.json();
+  console.log(fetchedData);
+  return {
+    title: fetchedData.title || DEFAULT_BOOK_DATA.title,
+    description: fetchedData.description || DEFAULT_BOOK_DATA.description,
+    authors: [{
+      name: fetchedData.author || "Unknown Author",
+      url: `https://www.google.com/search?q=${encodeURIComponent(fetchedData.author ||
+        "Unknown Author")}`
+    }],
+    number_of_pages: fetchedData.number_of_pages || DEFAULT_BOOK_DATA.number_of_pages,
+    publish_date: fetchedData.publish_date || DEFAULT_BOOK_DATA.publish_date,
+    cover: {
+      small: fetchedData.cover?.small || DEFAULT_BOOK_DATA.cover.small,
+      medium: fetchedData.cover?.medium || DEFAULT_BOOK_DATA.cover.medium,
+      large: fetchedData.cover?.large || DEFAULT_BOOK_DATA.cover.large
+    },
+    isbn: fetchedData.isbn || bookId
+  };
+}
 
 /**
  * Fetches multiple books data in parallel

@@ -106,6 +106,7 @@ app.post('/register', async (req, res) => {
       user: { ...user.toObject(), password: undefined, collection: [] }
     });
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Server error' });
   }
 });
@@ -219,6 +220,41 @@ app.get('/search', async (req, res) => {
       totalPages: Math.ceil(total / limit),
       currentPage: Math.floor(offset / limit) + 1
     });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+app.post('/books', protected, async (req, res) => {
+  try {
+    const {title, author, cover, description, isbn } = req.body;
+    //check if user didn't add max number of books (env.MAX_BOOKS or 10)
+    const userBooks = await Collection.find({ user: req.user._id });
+    if(!title || !author || !cover || !description || !isbn) {
+      return res.status(400).json({ message: 'Please provide all fields' });
+    }
+
+    if (userBooks.length >= (process.env.MAX_BOOKS || 10)) {
+      return res.status(400).json({ message: 'Max number of books reached' });
+    }
+
+    const book = await Book.create({ title, author, cover, description, isbn });
+
+    res.json({ message: 'Book created', book });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error' });
+    console.error(error);
+  }
+});
+
+app.get('/books/:id', async (req, res) => {
+  try {
+    const book = await Book.findById(req.params.id);
+    if (!book) {
+      return res.status(404).json({ message: 'Book not found' });
+    }
+
+    res.json({ book });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

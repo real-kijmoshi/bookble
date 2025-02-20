@@ -7,9 +7,11 @@ import {
   Loader2,
   Filter,
   ChevronDown,
+  PlusCircle,
 } from "lucide-react";
 import PropTypes from "prop-types";
 import BarcodeScanner from "./BarcodeScanner";
+import CreateBookModal from "./CreateBookModal";
 
 const API_URL = import.meta.env.VITE_API_BASE;
 
@@ -122,6 +124,7 @@ const BookSearch = ({ onAddBook, onClose }) => {
   const [resultLimit, setResultLimit] = useState(10);
   const [showProviderDropdown, setShowProviderDropdown] = useState(false);
   const [showLimitDropdown, setShowLimitDropdown] = useState(false);
+  const [showCreateBook, setShowCreateBook] = useState(false);
 
   // Provider switching
   const changeProvider = (providerKey) => {
@@ -152,6 +155,7 @@ const BookSearch = ({ onAddBook, onClose }) => {
 
   return (
     <>
+    
       <motion.div
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -169,6 +173,15 @@ const BookSearch = ({ onAddBook, onClose }) => {
             <h2 className="text-3xl font-bold text-gray-800 dark:text-white flex-grow">
               Search Books
             </h2>
+
+            {/* create new book */}
+            <button
+              onClick={() => setShowCreateBook(true)}
+              className="bg-gray-500 text-white p-2 rounded-full hover:bg-gray-600 transition cursor-pointer"
+            >
+              <PlusCircle className="h-6 w-6" />
+            </button>
+              
 
             {/* Provider Selector */}
             <div className="relative">
@@ -335,6 +348,14 @@ const BookSearch = ({ onAddBook, onClose }) => {
           />
         </div>
       )}
+
+      {/* Create Book Modal */}
+      <CreateBookModal
+        isOpen={showCreateBook}
+        onClose={() => setShowCreateBook(false)}
+        onAddBook={onAddBook}
+      />
+
 
       {/* Click-outside handlers for dropdowns */}
       {(showProviderDropdown || showLimitDropdown) && (
